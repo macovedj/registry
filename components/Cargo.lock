@@ -730,6 +730,7 @@ dependencies = [
  "chrono",
  "hex",
  "indexmap",
+ "lazy_static",
  "pbjson",
  "pbjson-build",
  "pbjson-types",

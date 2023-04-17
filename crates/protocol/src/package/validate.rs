@@ -133,6 +133,12 @@ pub struct Head {
     pub timestamp: SystemTime,
 }
 
+// impl From for Head {
+//   fn from(Head) -> Self {
+//     digest: head.digest,
+//     timestamp: head.timestamp
+//   }
+// }
 /// A validator for package records.
 #[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default)]
@@ -140,19 +146,19 @@ pub struct Validator {
     /// The hash algorithm used by the package log.
     /// This is `None` until the first (i.e. init) record is validated.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub algorithm: Option<HashAlgorithm>,
+    algorithm: Option<HashAlgorithm>,
     /// The current head of the validator.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub head: Option<Head>,
+    head: Option<Head>,
     /// The permissions of each key.
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
-    pub permissions: IndexMap<signing::KeyID, IndexSet<model::Permission>>,
+    permissions: IndexMap<signing::KeyID, IndexSet<model::Permission>>,
     /// The releases in the package log.
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
-    pub releases: IndexMap<Version, Release>,
+    releases: IndexMap<Version, Release>,
     /// The keys known to the validator.
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
-    pub keys: IndexMap<signing::KeyID, signing::PublicKey>,
+    keys: IndexMap<signing::KeyID, signing::PublicKey>,
 }
 
 impl Validator {
@@ -161,6 +167,9 @@ impl Validator {
         Self::default()
     }
 
+    pub fn algorithm(&self) -> &Option<HashAlgorithm> {
+      &self.algorithm
+    }
     /// Gets the current head of the validator.
     ///
     /// Returns `None` if no records have been validated yet.
@@ -168,6 +177,13 @@ impl Validator {
         &self.head
     }
 
+    pub fn permissions(&self) -> &IndexMap<signing::KeyID, IndexSet<model::Permission>> {
+      &self.permissions
+    }  
+
+    pub fn keys(&self) -> &IndexMap<signing::KeyID, signing::PublicKey> {
+      &self.keys
+    }  
     /// Validates an individual package record.
     ///
     /// It is expected that `validate` is called in order of the
