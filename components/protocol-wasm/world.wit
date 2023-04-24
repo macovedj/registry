@@ -55,14 +55,7 @@ interface protocol {
       timestamp: string,
       state: release-state
     }
-    
-    record validator {
-      algorithm: option<hash-algorithm>,
-      head: option<head>,
-      permissions: list<permission-entry>,
-      releases: list<release>,
-      keys: option<list<key-entry>>,
-    }
+    type validator = u32
     record log-leaf {
       log-id: string,
       record-id: string
@@ -78,10 +71,17 @@ interface protocol {
       log-length: u32,
       map-root: string
     }
+    type encoded-map-proof-bundle = string
+    type encoded-log-proof-bundle = string
     record inclusion {
-      log: string,
-      map: string
+      log: encoded-log-proof-bundle,
+      map: encoded-map-proof-bundle
     }
+    get-algorithm: func(this: validator) -> option<hash-algorithm>
+    get-head: func(this: validator) -> option<head>
+    get-permissions: func(this: validator) -> list<permission-entry>
+    get-releases: func(this: validator) -> list<release>
+    get-keys: func(this: validator) -> option<list<key-entry>>
     validate: func(package-records: list<proto-envelope-body>) -> package-info
     prove-inclusion: func(input: inclusion, checkpoint: map-checkpoint, heads: list<log-leaf>)
   }
