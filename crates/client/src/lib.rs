@@ -13,7 +13,7 @@ use storage::{
 use thiserror::Error;
 use warg_api::v1::{
     fetch::{FetchError, FetchLogsRequest, FetchLogsResponse},
-    package::{PackageError, PackageRecord, PackageRecordState, PublishRecordRequest},
+    package::{PackageError, PackageRecord, PackageRecordState, PublishRecordRequest, ContentSource},
     proof::{ConsistencyRequest, InclusionRequest},
 };
 use warg_crypto::{
@@ -131,8 +131,12 @@ impl<R: RegistryStorage, C: ContentStorage> Client<R, C> {
             _ => (),
         }
 
+        let source = info.source.clone();
         let record = info.finalize(signing_key)?;
         let log_id = LogId::package_log::<Sha256>(&package.id);
+        dbg!(log_id.clone());
+        let mut content_sources: HashMap<AnyHash, Vec<ContentSource>> = HashMap::new();
+        content_sources.insert(AnyHash::from(log_id.clone()), vec![ContentSource::Http { url: source }]);
         let record = self
             .api
             .publish_package_record(
@@ -140,7 +144,7 @@ impl<R: RegistryStorage, C: ContentStorage> Client<R, C> {
                 PublishRecordRequest {
                     id: Cow::Borrowed(&package.id),
                     record: Cow::Owned(record.into()),
-                    content_sources: Default::default(),
+                    content_sources,
                 },
             )
             .await
@@ -281,6 +285,7 @@ impl<R: RegistryStorage, C: ContentStorage> Client<R, C> {
     ) -> Result<Option<PackageDownload>, ClientError> {
         tracing::info!("downloading package `{id}` with requirement `{requirement}`");
         let info = self.fetch_package(id).await?;
+        dbg!(info.clone());
         let log_id = LogId::package_log::<Sha256>(&info.id);
 
         match info
@@ -351,6 +356,7 @@ impl<R: RegistryStorage, C: ContentStorage> Client<R, C> {
         checkpoint: &SerdeEnvelope<MapCheckpoint>,
         packages: impl IntoIterator<Item = &mut PackageInfo>,
     ) -> Result<(), ClientError> {
+        dbg!("UPDATING CHECKPOINT");
         let root: AnyHash = Hash::<Sha256>::of(checkpoint.as_ref()).into();
         tracing::info!("updating to checkpoint `{root}`");
 
@@ -380,6 +386,7 @@ impl<R: RegistryStorage, C: ContentStorage> Client<R, C> {
                 )
             })
             .collect::<HashMap<_, _>>();
+        dbg!("FETCHING LOGS");
 
         loop {
             let response: FetchLogsResponse = self
@@ -534,12 +541,16 @@ impl<R: RegistryStorage, C: ContentStorage> Client<R, C> {
         record_id: &RecordId,
         digest: &AnyHash,
     ) -> Result<PathBuf, ClientError> {
+      dbg!("DOWNLOADING CONTENT");
         match self.content.content_location(digest) {
             Some(path) => {
+                dbg!("SOME");
+                dbg!(path.clone());
                 tracing::info!("content for digest `{digest}` already exists in storage");
                 Ok(path)
             }
             None => {
+                dbg!("NONE");
                 self.content
                     .store_content(
                         Box::pin(self.api.download_content(log_id, record_id, digest).await?),

@@ -154,6 +154,8 @@ pub enum PublishEntry {
 pub struct PublishInfo {
     /// The id of the package being published.
     pub id: PackageId,
+    /// Content source
+    pub source: String,
     /// The last known head of the package log to use.
     ///
     /// If `None` and the package is not being initialized,

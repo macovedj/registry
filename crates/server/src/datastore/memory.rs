@@ -434,6 +434,7 @@ impl DataStore for MemoryDataStore {
             .ok_or_else(|| DataStoreError::LogNotFound(log_id.clone()))?;
 
         if let Some(checkpoint_index) = state.checkpoints.get_index_of(root) {
+            dbg!(log_id.clone());
             let start = match since {
                 Some(since) => match &state.records[log_id][since] {
                     RecordStatus::Validated(record) => record.index + 1,

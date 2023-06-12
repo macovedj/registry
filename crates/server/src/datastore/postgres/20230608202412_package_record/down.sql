@@ -1,0 +1,2 @@
+ALTER TABLE logs
+DROP COLUMN version;

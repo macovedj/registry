@@ -240,6 +240,7 @@ impl CoreService {
         let log_id = LogId::operator_log::<Sha256>();
         let record_id = RecordId::operator_record::<Sha256>(&init);
 
+        dbg!(log_id.clone());
         store
             .store_operator_record(&log_id, &record_id, &init)
             .await?;

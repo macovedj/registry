@@ -70,11 +70,13 @@ impl FileSystemRegistryStorage {
     }
 
     fn package_path(&self, id: &PackageId) -> PathBuf {
-        self.base_dir.join(
+        let path = self.base_dir.join(
             LogId::package_log::<Sha256>(id)
                 .to_string()
                 .replace(':', "/"),
-        )
+        );
+        dbg!(path.clone());
+        path
     }
 
     fn pending_publish_path(&self) -> PathBuf {
@@ -315,7 +317,7 @@ async fn load<T: for<'a> Deserialize<'a>>(path: &Path) -> Result<Option<T>> {
     let contents = tokio::fs::read_to_string(path)
         .await
         .with_context(|| format!("failed to read `{path}`", path = path.display()))?;
-
+    dbg!(&contents);
     serde_json::from_str(&contents).with_context(|| {
         format!(
             "failed to deserialize contents of `{path}`",

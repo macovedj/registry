@@ -248,12 +248,16 @@ impl Client {
         tracing::debug!("fetching record `{record_id}` for package `{log_id}`");
 
         let record = self.get_package_record(log_id, record_id).await?;
+        dbg!(&record);
         let sources = match &record.state {
             PackageRecordState::Published {
                 content_sources, ..
-            } => content_sources
+            } => {
+              dbg!(content_sources);
+              content_sources
                 .get(digest)
-                .ok_or_else(|| ClientError::NoSourceForContent(digest.clone()))?,
+                .ok_or_else(|| ClientError::NoSourceForContent(digest.clone()))?
+            },
             _ => {
                 return Err(ClientError::RecordNotPublished(record_id.clone()));
             }

@@ -35,8 +35,16 @@ pub struct PublishRecordRequest<'a> {
     pub content_sources: HashMap<AnyHash, Vec<ContentSource>>,
 }
 
-/// Represents a package record API entity in a registry.
+/// Represents a request to get a record from a package log.
 #[derive(Serialize, Deserialize)]
+#[serde(rename = "camelCase")]
+pub struct GetRecordRequest {
+    /// Where to source the content
+    pub content_source: String
+}
+
+/// Represents a package record API entity in a registry.
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PackageRecord {
     /// The identifier of the package record.
     pub id: RecordId,
@@ -71,7 +79,7 @@ impl PackageRecord {
 /// * `processing` - The record is being processed.
 /// * `rejected` - The record was rejected.
 /// * `published` - The record was published to the log.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "state", rename_all = "camelCase")]
 #[allow(clippy::large_enum_variant)]
 pub enum PackageRecordState {

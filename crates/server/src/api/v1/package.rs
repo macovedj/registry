@@ -21,7 +21,7 @@ use std::sync::Arc;
 use tempfile::NamedTempFile;
 use tokio::io::AsyncWriteExt;
 use warg_api::v1::package::{
-    ContentSource, PackageError, PackageRecord, PackageRecordState, PublishRecordRequest,
+    ContentSource, PackageError, PackageRecord, PackageRecordState, PublishRecordRequest, GetRecordRequest
 };
 use warg_crypto::hash::{AnyHash, Sha256};
 use warg_protocol::{
@@ -34,6 +34,7 @@ use warg_protocol::{
 pub struct Config {
     core_service: Arc<CoreService>,
     base_url: String,
+    storage_url: String,
     files_dir: PathBuf,
     temp_dir: PathBuf,
     content_policy: Option<Arc<dyn ContentPolicy>>,
@@ -44,6 +45,7 @@ impl Config {
     pub fn new(
         core_service: Arc<CoreService>,
         base_url: String,
+        storage_url: String,
         files_dir: PathBuf,
         temp_dir: PathBuf,
         content_policy: Option<Arc<dyn ContentPolicy>>,
@@ -52,6 +54,7 @@ impl Config {
         Self {
             core_service,
             base_url,
+            storage_url,
             files_dir,
             temp_dir,
             content_policy,
@@ -86,6 +89,14 @@ impl Config {
         format!(
             "{url}/content/{name}",
             url = self.base_url,
+            name = self.content_file_name(digest)
+        )
+    }
+
+    fn storage_url(&self, digest: &AnyHash) -> String {
+        format!(
+            "{url}/content/{name}",
+            url = self.storage_url,
             name = self.content_file_name(digest)
         )
     }
@@ -183,12 +194,12 @@ async fn publish_record(
         .try_into()
         .map_err(PackageApiError::bad_request)?;
 
-    // Specifying content sources is not allowed in this implementation
-    if !body.content_sources.is_empty() {
-        return Err(PackageApiError::unsupported(
-            "specifying content sources is not supported",
-        ));
-    }
+    // // Specifying content sources is not allowed in this implementation
+    // if !body.content_sources.is_empty() {
+    //     return Err(PackageApiError::unsupported(
+    //         "specifying content sources is not supported",
+    //     ));
+    // }
 
     // Preemptively perform the policy check on the record before storing it
     // This is performed here so that we never store an unauthorized record
@@ -274,10 +285,11 @@ async fn get_record(
                 .contents()
                 .into_iter()
                 .map(|d| {
+                  dbg!(config.storage_url(d));
                     (
                         d.clone(),
                         vec![ContentSource::Http {
-                            url: config.content_url(d),
+                            url: config.storage_url(d),
                         }],
                     )
                 })

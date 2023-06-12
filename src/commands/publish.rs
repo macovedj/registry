@@ -118,6 +118,9 @@ pub struct PublishInitCommand {
     /// Whether to wait for the publish to complete.
     #[clap(long)]
     pub no_wait: bool,
+    /// Whether to wait for the publish to complete.
+    #[clap(value_name = "SOURCE")]
+    pub source: String,
 }
 
 impl PublishInitCommand {
@@ -136,6 +139,7 @@ impl PublishInitCommand {
                     &client,
                     PublishInfo {
                         id: self.id.clone(),
+                        source: self.source,
                         head: None,
                         entries: vec![entry],
                     },
@@ -175,6 +179,9 @@ pub struct PublishReleaseCommand {
     /// The identifier of the package being published.
     #[clap(long, short, value_name = "PACKAGE")]
     pub id: PackageId,
+    /// Content source
+    #[clap(long, short, value_name = "SOURCE")]
+    pub source: String,
     /// The version of the package being published.
     #[clap(long, short, value_name = "VERSION")]
     pub version: Version,
@@ -219,6 +226,7 @@ impl PublishReleaseCommand {
                     &client,
                     PublishInfo {
                         id: self.id.clone(),
+                        source: self.source.clone(),
                         head: None,
                         entries: vec![entry],
                     },
@@ -263,6 +271,9 @@ pub struct PublishStartCommand {
     /// The identifier of the package being published.
     #[clap(value_name = "PACKAGE")]
     pub id: PackageId,
+    /// Content source
+    #[clap(value_name = "SOURCE")]
+    pub source: String,
 }
 
 impl PublishStartCommand {
@@ -276,6 +287,7 @@ impl PublishStartCommand {
             None => {
                 client.registry().store_publish(Some(&PublishInfo {
                     id: self.id.clone(),
+                    source: self.source.clone(),
                     head: None,
                     entries: Default::default(),
                 }))
@@ -370,6 +382,9 @@ pub struct PublishSubmitCommand {
     /// Whether to wait for the publish to complete.
     #[clap(long)]
     pub no_wait: bool,
+    /// Whether to wait for the publish to complete.
+    #[clap(value_name = "SOURCE")]
+    pub source: String,
 }
 
 impl PublishSubmitCommand {
@@ -380,6 +395,7 @@ impl PublishSubmitCommand {
 
         match client.registry().load_publish().await? {
             Some(info) => {
+                dbg!(info.clone());
                 println!("submitting publish for package `{id}`...", id = info.id);
 
                 let record_id = submit(&client, info.clone(), &self.common.key_name).await?;

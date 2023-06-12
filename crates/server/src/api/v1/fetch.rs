@@ -86,6 +86,7 @@ async fn fetch_logs(
         )));
     }
 
+    dbg!("BEFORE OPERATOR");
     let operator: Vec<ProtoEnvelopeBody> = config
         .core_service
         .store()
@@ -100,11 +101,14 @@ async fn fetch_logs(
         .map(Into::into)
         .collect();
 
+    dbg!("AFTER OPERATOR");
     let mut more = operator.len() == limit as usize;
 
     let mut map = HashMap::new();
     let packages = body.packages.into_owned();
     for (id, since) in packages {
+        dbg!(id.clone());
+        dbg!(since.as_ref());
         let records: Vec<ProtoEnvelopeBody> = config
             .core_service
             .store()

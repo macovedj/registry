@@ -96,10 +96,14 @@ pub fn create_router(
     content_policy: Option<Arc<dyn ContentPolicy>>,
     record_policy: Option<Arc<dyn RecordPolicy>>,
 ) -> Router {
+    dbg!("CREATING ROUTER");
     let proof_config = proof::Config::new(core.log_data().clone(), core.map_data().clone());
+    dbg!(&base_url);
+    let storage_url = String::from("https://storage.wa.dev");
     let package_config = package::Config::new(
         core.clone(),
         base_url,
+        storage_url,
         files_dir,
         temp_dir,
         content_policy,

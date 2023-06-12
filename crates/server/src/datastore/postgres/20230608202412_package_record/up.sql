@@ -1,0 +1,2 @@
+ALTER TABLE logs
+ADD COLUMN version TEXT;

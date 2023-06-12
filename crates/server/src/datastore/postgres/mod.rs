@@ -52,6 +52,7 @@ async fn get_records<R: Decode>(
         );
 
     if let Some(since) = since {
+        dbg!(since);
         let record_id = schema::records::table
             .select(schema::records::id)
             .filter(schema::records::record_id.eq(TextRef(since)))
@@ -94,6 +95,9 @@ where
         async move {
             // Unfortunately, this cannot be done with an ON CONFLICT DO NOTHING clause as
             // data cannot be returned; so just do a query for the log id and insert if it doesn't exist.
+            dbg!("INSERTING IN DB");
+            dbg!(log_id.clone());
+            dbg!(record_id);
             let log_id = match schema::logs::table
                 .select(schema::logs::id)
                 .filter(schema::logs::log_id.eq(TextRef(log_id)))
@@ -259,6 +263,8 @@ where
     <V as Validator>::Error: ToString + Send + Sync,
     DataStoreError: From<<V as Validator>::Error>,
 {
+    dbg!("GETTING RECORD");
+    dbg!(log_id.clone());
     let log_id = schema::logs::table
         .select(schema::logs::id)
         .filter(schema::logs::log_id.eq(TextRef(log_id)))
@@ -681,6 +687,7 @@ impl DataStore for PostgresDataStore {
         limit: u16,
     ) -> Result<Vec<ProtoEnvelope<operator::OperatorRecord>>, DataStoreError> {
         let mut conn = self.0.get().await?;
+        dbg!(log_id.clone());
         let log_id = schema::logs::table
             .select(schema::logs::id)
             .filter(schema::logs::log_id.eq(TextRef(log_id)))
@@ -717,6 +724,7 @@ impl DataStore for PostgresDataStore {
         record_id: &RecordId,
     ) -> Result<Record<operator::OperatorRecord>, DataStoreError> {
         let mut conn = self.0.get().await?;
+        dbg!(log_id);
         get_record::<operator::Validator>(conn.as_mut(), log_id, record_id).await
     }
 
