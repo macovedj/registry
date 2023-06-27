@@ -9,13 +9,13 @@ use super::fork::Fork;
 use super::link::Link;
 use super::path::{Path, Side};
 use super::proof::Proof;
-use super::singleton::Singleton;
+// use super::singleton::Singleton;
 
 #[derive(Debug)]
 pub enum Node<D: SupportedDigest> {
     Leaf(Hash<D>),
     Fork(Fork<D>),
-    Singleton(Singleton<D>),
+    // Singleton(Singleton<D>),
     Empty(usize),
 }
 
@@ -24,7 +24,7 @@ impl<D: SupportedDigest> Clone for Node<D> {
         match self {
             Self::Leaf(leaf) => Self::Leaf(leaf.clone()),
             Self::Fork(node) => Self::Fork(node.clone()),
-            Self::Singleton(s) => Self::Singleton(s.clone()),
+            // Self::Singleton(s) => Self::Singleton(s.clone()),
             Self::Empty(height) => Self::Empty(*height),
         }
     }
@@ -35,7 +35,7 @@ impl<D: SupportedDigest> Node<D> {
         match self {
             Node::Leaf(hash) => hash.clone(),
             Node::Fork(fork) => fork.hash(),
-            Node::Singleton(singleton) => singleton.hash(),
+            // Node::Singleton(singleton) => singleton.hash(),
             Node::Empty(height) => D::empty_tree_hash(*height).to_owned(),
         }
     }
@@ -45,13 +45,13 @@ impl<D: SupportedDigest> Node<D> {
         mut path: Path<'_, D>,
     ) -> Option<Proof<D, K, V>> {
         match (path.next(), self) {
-            (Some(_), Self::Singleton(singleton)) => {
-                if singleton.key() == path.hash() {
-                    Some(Proof::new(Vec::new()))
-                } else {
-                    None
-                }
-            }
+            // (Some(_), Self::Singleton(singleton)) => {
+            // if singleton.key() == path.hash() {
+            //     Some(Proof::new(Vec::new()))
+            // } else {
+            //     None
+            // }
+            // }
             (Some(_), Self::Empty(_)) => None,
             (Some(idx), Self::Fork(fork)) => {
                 let mut proof = fork[idx].as_ref().node().prove(path)?;
@@ -76,51 +76,53 @@ impl<D: SupportedDigest> Node<D> {
             // We are at the end of the path. Save the leaf.
             None => (
                 Node::Leaf(value),
-                matches!(self, Node::Empty(_)) || matches!(self, Node::Singleton(_)),
+                matches!(self, Node::Empty(_)), // || matches!(self, Node::Singleton(_)),
             ),
 
             // We are not at the end of the path. Recurse...
-            Some(index) => match self.clone() {
+            Some(index) => match self {
                 Node::Empty(_) => {
-                    if path.index() == 1 {
-                        let singleton = Node::Singleton(Singleton::new(
-                            path.hash().clone(),
-                            value,
-                            path.height(),
-                        ));
-                        match index {
-                            Side::Left => {
-                                let fork = Fork::new(
-                                    Arc::new(Link::new(singleton)),
-                                    Arc::new(Link::new(Node::Empty(path.height()))),
-                                );
-                                return (Node::Fork(fork), true);
-                            }
-                            Side::Right => {
-                                let fork = Fork::new(
-                                    Arc::new(Link::new(Node::Empty(path.height()))),
-                                    Arc::new(Link::new(singleton)),
-                                );
-                                return (Node::Fork(fork), true);
-                            }
+                    // if path.index() == 1 {
+                    let (node, _) = Node::Empty(path.height()).insert(path, value);
+                    let fork = match index {
+                        Side::Left => {
+                            Fork::new(
+                                Arc::new(Link::new(node)),
+                                Arc::new(Link::new(Node::Empty(path.height()))),
+                            )
+                            // return (Node::Fork(fork), true);
                         }
-                    }
-                    let singleton = Node::Singleton(Singleton::new(
-                        path.hash().clone(),
-                        value,
-                        path.height() + 1,
-                    ));
-                    (singleton, true)
+                        Side::Right => Fork::new(
+                            Arc::new(Link::new(Node::Empty(path.height()))),
+                            Arc::new(Link::new(node)),
+                        ),
+                    };
+
+                    // let singleton = Node::Singleton(Singleton::new(
+                    //     path.hash().clone(),
+                    //     value,
+                    //     path.height() + 1,
+                    // ));
+                    (Node::Fork(fork), true)
                 }
-                Node::Fork(mut fork) => {
+                Node::Fork(fork) => {
                     // Choose the branch on the specified side.
                     let (node, new) = fork[index].as_ref().node().insert(path, value);
-                    fork[index] = Arc::new(Link::new(node));
-                    (Node::Fork(fork), new)
+                    // fork[index] = Arc::new(Link::new(node));
+                    let new_fork = match index {
+                        Side::Left => Fork::new(
+                          Arc::new(Link::new(node)),
+                          fork[Side::Right].clone()),
+                        Side::Right => Fork::new(
+                          fork[Side::Left].clone(),
+                          Arc::new(Link::new(node)),
+                        )
+                    };
+                    (Node::Fork(new_fork), new)
                 }
-                Node::Singleton(singleton) => {
-                    singleton.insert(path, path.hash().clone(), value, index)
-                }
+                // Node::Singleton(singleton) => {
+                //     singleton.insert(path, path.hash().clone(), value, index)
+                // }
                 Node::Leaf(_) => (Node::Leaf(value), false),
             },
         }
